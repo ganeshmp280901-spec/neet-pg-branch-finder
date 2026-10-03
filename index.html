@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NEET PG Branch Finder — 15 Question Version</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial,sans-serif;background:#f4f7fb;color:#172033}
+.container{max-width:1050px;margin:auto;padding:22px}
+.header{background:#172554;color:white;border-radius:20px;padding:25px;margin-bottom:18px}
+.header h1{margin:0 0 7px;font-size:28px}.header p{margin:0;opacity:.88}
+.card{background:white;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 5px 20px #17203312}
+h2{margin:0 0 8px;font-size:21px}.sub{color:#64748b;font-size:14px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:1fr 310px;gap:16px;align-items:stretch}
+.q{border:1px solid #e2e8f0;border-radius:14px;padding:15px;margin-bottom:11px}
+.q:last-child{margin-bottom:0}.q strong{display:block;margin-bottom:10px}
+.options{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+label.opt{border:1px solid #cbd5e1;border-radius:9px;padding:8px 4px;text-align:center;font-size:12px;cursor:pointer}
+input{display:none}input:checked+span{font-weight:700}label.opt:has(input:checked){background:#e0e7ff;border-color:#4f46e5}
+.preview{background:#f8fafc;border-radius:14px;padding:15px;position:sticky;top:15px;height:max-content}
+.preview h3{margin:0 0 10px;font-size:15px}.bar{height:7px;background:#e2e8f0;border-radius:9px;overflow:hidden;margin:5px 0 12px}.fill{height:100%;background:#4f46e5;width:0}
+.pill{display:inline-block;background:#eef2ff;color:#3730a3;padding:5px 8px;border-radius:99px;font-size:11px;margin:2px}
+button{border:0;border-radius:12px;padding:13px 18px;font-weight:700;cursor:pointer}
+.primary{background:#172554;color:white;width:100%;font-size:16px}.secondary{background:#e2e8f0;color:#172033}
+.results{display:none}.result{border:1px solid #e2e8f0;border-radius:15px;padding:15px;margin:10px 0}
+.rank{font-size:21px;font-weight:800}.score{float:right;font-weight:800;color:#4338ca}
+.tags{margin-top:7px}.small{font-size:12px;color:#64748b}
+.notice{background:#fff7ed;border-left:4px solid #f97316;padding:11px;border-radius:8px;font-size:13px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.preview{position:static}.options{grid-template-columns:repeat(5,1fr)}}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+<h1>NEET PG Branch Finder</h1>
+<p>15 questions • 6 key factors • live category filtering • Top 3 branch result</p>
+</div>
+
+<div class="card">
+<h2>Find your branch</h2>
+<div class="sub">Answer each question from 1–5. Each category combines related questions and immediately shows the branches that fit that category.</div>
+<div class="notice">1 = very low / strongly dislike &nbsp; • &nbsp; 3 = neutral &nbsp; • &nbsp; 5 = very high / strongly prefer</div>
+</div>
+
+<div id="questions"></div>
+
+<div class="card">
+<button class="primary" onclick="calculate()">✓ FIND MY DESIRED BRANCH</button>
+<button class="secondary" style="margin-top:9px;width:100%" onclick="resetAll()">↺ Reset</button>
+</div>
+
+<div id="results" class="card results"></div>
+</div>
+
+<script>
+const branches=[
+["MD General Medicine",{wlb:2,patient:5,diag:5,proc:4,learn:5,ss:5}],
+["MD Pediatrics",{wlb:2,patient:5,diag:5,proc:4,learn:5,ss:5}],
+["MD Dermatology",{wlb:5,patient:5,diag:4,proc:4,learn:4,ss:2}],
+["MD Psychiatry",{wlb:5,patient:5,diag:5,proc:2,learn:5,ss:2}],
+["MD Respiratory Medicine",{wlb:3,patient:4,diag:5,proc:4,learn:5,ss:3}],
+["MD Emergency Medicine",{wlb:2,patient:5,diag:5,proc:5,learn:5,ss:3}],
+["MD Radiation Oncology",{wlb:3,patient:4,diag:4,proc:3,learn:5,ss:3}],
+["MD Nuclear Medicine",{wlb:4,patient:2,diag:5,proc:3,learn:5,ss:3}],
+["MD Family Medicine",{wlb:4,patient:5,diag:4,proc:3,learn:4,ss:2}],
+["MD Geriatric Medicine",{wlb:3,patient:5,diag:5,proc:2,learn:5,ss:3}],
+["MS General Surgery",{wlb:2,patient:5,diag:5,proc:5,learn:5,ss:5}],
+["MS OBGYN",{wlb:2,patient:5,diag:5,proc:5,learn:5,ss:5}],
+["MS Orthopaedics",{wlb:2,patient:5,diag:4,proc:5,learn:5,ss:4}],
+["MS ENT",{wlb:3,patient:5,diag:4,proc:5,learn:5,ss:3}],
+["MS Ophthalmology",{wlb:4,patient:5,diag:5,proc:5,learn:5,ss:3}],
+["MD Anaesthesiology",{wlb:2,patient:3,diag:4,proc:5,learn:5,ss:3}],
+["MD PM&R",{wlb:4,patient:5,diag:4,proc:4,learn:4,ss:2}],
+["MD Pathology",{wlb:5,patient:2,diag:5,proc:4,learn:5,ss:3}],
+["MD Transfusion Medicine",{wlb:4,patient:2,diag:3,proc:4,learn:4,ss:2}],
+["MD Community Medicine / PSM",{wlb:5,patient:3,diag:3,proc:3,learn:4,ss:1}],
+["MD Microbiology",{wlb:5,patient:1,diag:4,proc:3,learn:4,ss:1}],
+["MD Pharmacology",{wlb:5,patient:1,diag:2,proc:2,learn:4,ss:1}],
+["MD Forensic Medicine",{wlb:4,patient:2,diag:3,proc:3,learn:3,ss:1}],
+["MD Anatomy",{wlb:5,patient:1,diag:1,proc:2,learn:3,ss:1}],
+["MD Physiology",{wlb:5,patient:1,diag:2,proc:2,learn:3,ss:1}],
+["MD Biochemistry",{wlb:5,patient:1,diag:2,proc:2,learn:3,ss:1}]
+];
+
+const cats=[
+{key:"wlb",title:"🕐 Work–Life Balance",desc:"How strongly do you prefer predictable hours and less acute workload?",
+qs:[
+["q1","How important is having predictable working hours?"],
+["q2","How much do you want to avoid frequent night duties/emergencies?"],
+["q3","How important is having protected personal/family time?"]]},
+{key:"patient",title:"🧑‍🤝‍🧑 Patient Interaction",desc:"How much direct patient contact do you want?",
+qs:[
+["q4","How much do you enjoy talking to and examining patients?"],
+["q5","How important is regular face-to-face patient contact?"],
+["q6","Do you prefer a patient-facing specialty over behind-the-scenes work?"]]},
+{key:"diag",title:"🧠 Problem Solving / Diagnostics",desc:"How much do you enjoy solving diagnostic problems?",
+qs:[
+["q7","How much do you enjoy difficult clinical diagnosis?"],
+["q8","How important is interpreting clinical data/investigations?"],
+["q9","Do you enjoy uncertainty and building a differential diagnosis?"]]},
+{key:"proc",title:"🛠️ Procedures & Hands-on Skills",desc:"How much hands-on/procedural work do you want?",
+qs:[
+["q10","How much do you enjoy procedures and hands-on work?"],
+["q11","How important is developing technical/manual skills?"]]},
+{key:"learn",title:"📈 Learning & Complexity",desc:"How much do you want a continuously evolving/complex specialty?",
+qs:[
+["q12","How much do you enjoy learning complex medical concepts?"],
+["q13","How important is continuous learning throughout your career?"]]},
+{key:"ss",title:"🎓 Super-speciality Orientation",desc:"How strongly do you want a pathway toward advanced specialization?",
+qs:[
+["q14","How important is pursuing a DM/DrNB or advanced specialization?"],
+["q15","Do you want your PG branch to have strong super-speciality pathways?"]]}
+];
+
+function render(){
+ let html="";
+ cats.forEach(c=>{
+  html+=`<div class="card"><div class="grid"><div>
+  <h2>${c.title}</h2><div class="sub">${c.desc}</div>`;
+  c.qs.forEach(([id,text],i)=>{
+   html+=`<div class="q"><strong>${id.toUpperCase()}. ${text}</strong><div class="options">`;
+   for(let n=1;n<=5;n++) html+=`<label class="opt"><input type="radio" name="${id}" value="${n}" onchange="updateCategory('${c.key}')"><span>${n}</span></label>`;
+   html+=`</div></div>`;
+  });
+  html+=`</div><div class="preview" id="preview-${c.key}"><h3>Branches matching this factor</h3><div class="small">Answer the questions to see live filtering.</div></div></div></div>`;
+ });
+ document.getElementById("questions").innerHTML=html;
+}
+function get(id){let e=document.querySelector(`input[name="${id}"]:checked`);return e?+e.value:0}
+function answered(ids){return ids.filter(id=>document.querySelector(`input[name="${id}"]:checked`)).length}
+function avg(ids){let vals=ids.map(get).filter(v=>v>0);return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0}
+function updateCategory(key){
+ const c=cats.find(x=>x.key===key), ids=c.qs.map(x=>x[0]), count=answered(ids), target=avg(ids);
+ const box=document.getElementById("preview-"+key);
+ if(count===0){
+   box.innerHTML=`<h3>Best matches for ${c.title}</h3>
+   <div class="small">Your category rating: <b>— / 5</b></div>
+   <div class="bar"><div class="fill" style="width:0%"></div></div>
+   <div class="small">Select an answer to start filtering this category.</div>`;
+   return;
+ }
+ let arr=branches.map(b=>({name:b[0],score:100*(1-Math.abs(b[1][key]-target)/4)})).sort((a,b)=>b.score-a.score).slice(0,5);
+ box.innerHTML=`<h3>Best matches for ${c.title}</h3>
+ <div class="small">Your category rating: <b>${target.toFixed(1)}/5</b> &nbsp; (${count}/${ids.length} answered)</div>
+ <div class="bar"><div class="fill" style="width:${target*20}%"></div></div>
+ ${arr.map((x,i)=>`<div style="margin:8px 0"><b>${i+1}. ${x.name}</b><br><span class="small">${Math.round(x.score)}% category fit</span></div>`).join("")}`;
+}
+function calculate(){
+ const totalAnswered=cats.reduce((sum,c)=>sum+answered(c.qs.map(x=>x[0])),0);
+ if(totalAnswered<15){
+   alert(`Please answer all 15 questions before finding your desired branch.
+
+Answered: ${totalAnswered}/15`);
+   return;
+ }
+ let prefs={};
+ cats.forEach(c=>prefs[c.key]=avg(c.qs.map(x=>x[0])));
+ let arr=branches.map(b=>{
+   let score=0;
+   Object.keys(prefs).forEach(k=>score+=1-Math.abs(b[1][k]-prefs[k])/4);
+   return {name:b[0],score:100*score/6};
+ }).sort((a,b)=>b.score-a.score);
+ let top=arr.slice(0,3);
+ document.getElementById("results").style.display="block";
+ document.getElementById("results").innerHTML=`<h2>🎯 Your Desired Branches</h2>
+ <div class="sub">Based on your combined 15-question profile</div>
+ ${top.map((x,i)=>`<div class="result"><span class="rank">#${i+1} ${x.name}</span><span class="score">${Math.round(x.score)}%</span>
+ <div class="tags">${cats.map(c=>`<span class="pill">${c.key.toUpperCase()}: ${prefs[c.key].toFixed(1)}</span>`).join("")}</div></div>`).join("")}
+ <div class="small" style="margin-top:12px">The result is a preference-matching tool, not a statement about objective specialty quality or lifestyle.</div>`;
+ document.getElementById("results").scrollIntoView({behavior:"smooth"});
+}
+function resetAll(){
+ document.querySelectorAll('input[type="radio"]').forEach(x=>x.checked=false);
+ cats.forEach(c=>updateCategory(c.key));
+ document.getElementById("results").style.display="none";
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+render();
+cats.forEach(c=>updateCategory(c.key));
+</script>
+</body>
+</html>
