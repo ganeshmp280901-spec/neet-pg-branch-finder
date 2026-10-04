@@ -26,7 +26,7 @@ button{border:0;border-radius:12px;padding:13px 18px;font-weight:700;cursor:poin
 .results{display:none}.result{border:1px solid #e2e8f0;border-radius:15px;padding:15px;margin:10px 0}
 .rank{font-size:21px;font-weight:800}.score{float:right;font-weight:800;color:#4338ca}
 .tags{margin-top:7px}.small{font-size:12px;color:#64748b}
-.notice{background:#fff7ed;border-left:4px solid #f97316;padding:11px;border-radius:8px;font-size:13px}
+.notice{background:#fff7ed;border-left:4px solid #f97316;padding:11px;border-radius:8px;font-size:13px}.explorer{margin-top:18px;border-top:1px solid #e2e8f0;padding-top:18px}.select{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:white;font-size:14px}.branch-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}.branch-table th,.branch-table td{padding:9px 8px;border-bottom:1px solid #e2e8f0;text-align:left;vertical-align:top}.branch-table th{background:#f8fafc}.target{font-weight:800;color:#4338ca}.apply{background:#4f46e5;color:white;margin-top:12px}
 @media(max-width:800px){.grid{grid-template-columns:1fr}.preview{position:static}.options{grid-template-columns:repeat(5,1fr)}}
 </style>
 </head>
@@ -167,7 +167,41 @@ Answered: ${totalAnswered}/15`);
  <div class="sub">Based on your combined 15-question profile</div>
  ${top.map((x,i)=>`<div class="result"><span class="rank">#${i+1} ${x.name}</span><span class="score">${Math.round(x.score)}%</span>
  <div class="tags">${cats.map(c=>`<span class="pill">${c.key.toUpperCase()}: ${prefs[c.key].toFixed(1)}</span>`).join("")}</div></div>`).join("")}
- <div class="small" style="margin-top:12px">The result is a preference-matching tool, not a statement about objective specialty quality or lifestyle.</div>`;
+ <div class="small" style="margin-top:12px">The result is a preference-matching tool, not a statement about objective specialty quality or lifestyle.</div>
+ <div class="explorer">
+   <h2>🔎 Curious about another branch?</h2>
+   <div class="sub">Select any branch to see the <b>1–5 rating you would need to give each question</b> to match that branch's current profile.</div>
+   <select id="branchExplorer" class="select" onchange="showBranchRatings()">
+     <option value="">— Select a PG branch —</option>
+     ${branches.map((b,i)=>`<option value="${i}">${b[0]}</option>`).join("")}
+   </select>
+   <div id="branchRatings"></div>
+ </div>`;
+ document.getElementById("results").scrollIntoView({behavior:"smooth"});
+}
+function showBranchRatings(){
+ const sel=document.getElementById("branchExplorer"), out=document.getElementById("branchRatings");
+ if(!sel.value){out.innerHTML="";return;}
+ const b=branches[Number(sel.value)];
+ let rows=[];
+ cats.forEach(c=>{
+   const target=b[1][c.key];
+   c.qs.forEach(([id,text])=>rows.push(`<tr><td><b>${id.toUpperCase()}</b></td><td>${text}</td><td><span class="target">${target}/5</span></td><td class="small">${c.title.replace(/^\S+\s/,"")}</td></tr>`));
+ });
+ out.innerHTML=`<div class="result" style="margin-top:12px"><div class="rank">${b[0]}</div><div class="small" style="margin-top:5px">Target profile: WLB ${b[1].wlb} • Patient ${b[1].patient} • Diagnostics ${b[1].diag} • Procedures ${b[1].proc} • Learning ${b[1].learn} • Super-speciality ${b[1].ss}</div>
+ <table class="branch-table"><thead><tr><th>Q</th><th>Question</th><th>Suggested rating</th><th>Factor</th></tr></thead><tbody>${rows.join("")}</tbody></table>
+ <button class="apply" onclick="applyBranchRatings(${Number(sel.value)})">Apply these ratings to my questionnaire</button></div>`;
+}
+function applyBranchRatings(index){
+ const b=branches[index];
+ cats.forEach(c=>{
+   const target=b[1][c.key];
+   c.qs.forEach(([id])=>{
+     const radio=document.querySelector(`input[name="${id}"][value="${target}"]`);
+     if(radio) radio.checked=true;
+   });
+   updateCategory(c.key);
+ });
  document.getElementById("results").scrollIntoView({behavior:"smooth"});
 }
 function resetAll(){
